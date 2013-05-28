@@ -1,0 +1,134 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="javaMandrillWrapper" default="dist" basedir=".">
+	<description>
+        a build for Java-Mandrill-Wrapper
+    </description>
+	
+	<!-- set global properties for this build -->
+	<property name="src" location="src/main/java"/>
+	<property name="test" location="src/test/java"/>
+	<property name="build" location="build"/>
+	<property name="dist"  location="dist"/>
+
+
+	<target name="increment">
+		<buildnumber/>
+	</target>
+
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp/>
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}"/>
+		<mkdir dir="${build}/classes"/>
+	</target>
+
+	<target name="compile" depends="init"
+        description="compile the source" >
+
+		<ivy:cachepath pathid="ivy.cachepath.default" conf="default"/>
+		<ivy:cachepath pathid="ivy.cachepath.build" conf="build"/>
+
+		<path id="ivy.deps">
+			<path refid="ivy.cachepath.default" />
+			<path refid="ivy.cachepath.build" />
+		</path>
+		
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac nowarn="on" srcdir="${src}" destdir="${build}/classes" debug="true" debuglevel="lines,vars,source">
+			<classpath refid="ivy.deps" />
+		</javac>
+
+		<!-- copy properties and other non-java files from the src directory -->
+		<copy todir="${build}/classes">
+			<fileset dir="${src}" >
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="dist" depends="compile" description="generate the distribution" >
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist}/jars"/>
+		<mkdir dir="${dist}/sources"/>
+
+		<jar jarfile="${dist}/jars/mandrill.jar" basedir="${build}/classes"/>
+		<jar jarfile="${dist}/jars/mandrill-sources.jar" basedir="${src}" />
+	</target>
+
+	<target name="pub" depends="increment,dist" >
+		<ivy:publish resolver="local" pubrevision="1.0.0.${build.number}" update="true" overwrite="true" conf="default">
+			<artifacts pattern="${dist}/jars/[artifact].jar" />
+		</ivy:publish>
+	</target>
+	
+	
+	
+
+	<target name="test" depends="compile" description="Run the junit automated tests">
+		<property name="results" location="${build}/test/results"/>
+		<mkdir dir="${results}"/>
+		<mkdir dir="${build}/test/classes"/>
+		
+		<ivy:cachepath pathid="ivy.cachepath.default" conf="default"/>
+		<ivy:cachepath pathid="ivy.cachepath.build" conf="build"/>
+		<ivy:cachepath pathid="ivy.cachepath.test" conf="test"/>
+
+		<path id="classpath.test.compile">
+			<path refid="ivy.cachepath.default" />
+			<path refid="ivy.cachepath.build" />
+			<path refid="ivy.cachepath.test" />
+		    <pathelement location="${build}/classes" />
+		</path>
+		
+		<path id="classpath.test.junit">
+			<path refid="ivy.cachepath.default" />
+			<path refid="ivy.cachepath.build" />
+			<path refid="ivy.cachepath.test" />
+		    <pathelement location="${build}/classes" />
+		    <pathelement location="${build}/test/classes" />
+		</path>
+		
+
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac nowarn="on" srcdir="${test}" destdir="${build}/test/classes" debug="true" debuglevel="lines,vars,source">
+			<classpath refid="classpath.test.compile" />
+		</javac>
+
+		<!-- copy properties and other non-java files from the src directory -->
+		<copy todir="${build}/test/classes">
+			<fileset dir="${test}/../resources" >
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		
+		<junit printsummary="true" fork="on" haltonerror="false" failureproperty="unit.test.failed">
+			<classpath refid="classpath.test.junit" />
+			<formatter type="plain" usefile="false"/>
+			<formatter type="xml"/>
+			<batchtest todir="${results}">
+				<fileset dir="${build}/test/classes">
+					<include name="**/*Test.class"/>
+					<exclude name="**/*$*"/>
+					<exclude name="**/Base*"/>
+					<exclude name="**/*Abstract*"/>
+				</fileset>
+			</batchtest>
+			 <jvmarg value="-XX:-UseSplitVerifier"/>
+		</junit>
+
+		<junitreport todir="${results}">
+			<fileset dir="${results}">
+				<include name="TEST-*.xml"/>
+			</fileset>
+			<report todir="${results}"/>
+		</junitreport>
+		<fail if="unit.test.failed" message="Unit test failure."/>
+	</target>
+
+	<target name="clean" description="clean up" >
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+	</target>
+</project>

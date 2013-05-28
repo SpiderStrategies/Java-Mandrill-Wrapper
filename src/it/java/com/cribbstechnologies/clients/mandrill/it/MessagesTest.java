@@ -38,6 +38,7 @@ public class MessagesTest {
 	private static HttpClient client;
 	private static ObjectMapper mapper = new ObjectMapper();
 	private static Properties props = new Properties();
+	private static Properties testProps = new Properties();
 	
 	@BeforeClass
 	public static void beforeClass() {
@@ -46,6 +47,13 @@ public class MessagesTest {
 		} catch (IOException e) {
 			fail ("properties file not loaded");
 		}
+		
+		try {
+			testProps.load(MessagesTest.class.getClassLoader().getResourceAsStream("test.properties"));
+		} catch (IOException e) {
+			fail ("test properties file not loaded");
+		}
+		
 		config.setApiKey(props.getProperty("apiKey"));
 		config.setApiVersion("1.0");
 		config.setBaseURL("https://mandrillapp.com/api");
@@ -70,7 +78,8 @@ public class MessagesTest {
 		message.setHeaders(headers);
 		message.setHtml("<html><body><h1>Oh snap!</h1>Guess what I saw?<a href=\"http://www.google.com\">google</a></body></html>");
 		message.setSubject("This is the subject");
-		MandrillRecipient[] recipients = new MandrillRecipient[]{new MandrillRecipient(props.getProperty("email.to.name1"), props.getProperty("email.to.address1")), new MandrillRecipient(props.getProperty("email.to.name2"), props.getProperty("email.to.address2"))};
+		
+		MandrillRecipient[] recipients = getRecipients();		
 		message.setTo(recipients);
 		message.setTrack_clicks(true);
 		message.setTrack_opens(true);
@@ -95,7 +104,8 @@ public class MessagesTest {
 		message.setFrom_name("Big Jimmy");
 		message.setHeaders(headers);
 		message.setSubject("This is the subject");
-		MandrillRecipient[] recipients = new MandrillRecipient[]{new MandrillRecipient(props.getProperty("email.to.name1"), props.getProperty("email.to.address1")), new MandrillRecipient(props.getProperty("email.to.name2"), props.getProperty("email.to.address2"))};
+		
+		MandrillRecipient[] recipients = getRecipients();		
 		message.setTo(recipients);
 		message.setTrack_clicks(true);
 		message.setTrack_opens(true);
@@ -104,7 +114,7 @@ public class MessagesTest {
 		request.setMessage(message);
 		List<TemplateContent> content = new ArrayList<TemplateContent>();
 		request.setTemplate_content(content);
-		request.setTemplate_name("template2");
+		request.setTemplate_name(testProps.getProperty("sendTemplatedMessage.templateName"));
         List<MergeVar> globalMergeVars = new ArrayList<MergeVar>();
         globalMergeVars.add(new MergeVar("username", "bcribs"));
         globalMergeVars.add(new MergeVar("registration_url", "http://myserver.com/register?userid=bcribs"));
@@ -116,6 +126,23 @@ public class MessagesTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	protected MandrillRecipient[] getRecipients() {
+		int counter = 1;
+		List<MandrillRecipient> r = new ArrayList<>();
+		do {
+			String name = props.getProperty("email.to.name"+counter);
+			String address = props.getProperty("email.to.address"+counter++);
+			if (name != null && address != null) {
+				r.add(new MandrillRecipient(name, address));
+			} else {
+				counter = 0;
+			}
+		} while (counter > 0);
+		
+		MandrillRecipient[] recipients = r.toArray(new MandrillRecipient[r.size()]);
+		return recipients;
 	}
 
 }

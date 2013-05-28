@@ -1,0 +1,25 @@
+<ivy-module version="2.0">
+
+    <info organisation="com.spider" module="mandrill"/>
+    
+    <configurations defaultconf="default" defaultconfmapping="build->default;test->default">
+    	<conf name="build" />
+    	<conf name="default" />
+    	<conf name="test" />
+    </configurations>
+    
+     <publications> 
+        <artifact name="mandrill" type="jar" ext="jar" conf="default"/> 
+        <artifact name="mandrill-sources" type="source" ext="jar" conf="default"/> 
+    </publications>
+    
+    <dependencies>
+     	<dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.9.12"/>
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5"/>
+		
+        <dependency org="junit" name="junit" rev="4.11" conf="test"/>
+		<dependency org="org.mockito" name="mockito-all" rev="1.9.5" conf="test" />
+		<dependency org="commons-io" name="commons-io" rev="2.4" conf="test" />
+    </dependencies>
+    
+</ivy-module>
